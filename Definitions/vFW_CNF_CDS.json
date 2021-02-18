@@ -1,0 +1,330 @@
+{
+    "tosca_definitions_version": "controller_blueprint_1_0_0",
+    "metadata": {
+        "template_author": "Samuli Silvius <s.silvius@partner.samsung.com>",
+        "author-email": "lukasz.rajewski@orange.com",
+        "user-groups": "ADMIN, OPERATION",
+        "template_name": "vFW_CNF_CDS",
+        "template_version": "7.0.0",
+        "template_tags": "Samuli Silvius, Lukasz Rajewski, vFW_CNF_CDS",
+        "template_type": "DEFAULT"
+    },
+    "imports": [
+        {
+            "file": "Definitions/data_types.json"
+        },
+        {
+            "file": "Definitions/relationship_types.json"
+        },
+        {
+            "file": "Definitions/artifact_types.json"
+        },
+        {
+            "file": "Definitions/node_types.json"
+        },
+        {
+            "file": "Definitions/policy_types.json"
+        }
+    ],
+    "dsl_definitions": {
+        "vpkg-rest-api": {
+            "type": "basic-auth",
+            "url": "http://",
+            "username": "admin",
+            "password": "admin"
+        },
+        "config-deploy-properties": {
+            "resolution-key": {
+                "get_input": "resolution-key"
+            }
+        }
+    },
+    "topology_template": {
+        "workflows": {
+            "resource-assignment": {
+                "steps": {
+                    "resource-assignment": {
+                        "description": "Resource Assign Workflow",
+                        "target": "resource-assignment",
+                        "activities": [
+                            {
+                                "call_operation": "ResourceResolutionComponent.process"
+                            }
+                        ],
+                        "on_success": [
+                            "exemplary-script"
+                        ]
+                    },
+                    "exemplary-script": {
+                        "description": "Exemplary script",
+                        "target": "exemplary-script",
+                        "activities": [
+                            {
+                                "call_operation": "ComponentScriptExecutor.process"
+                            }
+                        ],
+                        "on_success": [
+                            "profile-upload"
+                        ]
+                    },
+                    "profile-upload": {
+                        "description": "Generate and upload K8s Profile",
+                        "target": "k8s-profile-upload",
+                        "activities": [
+                            {
+                                "call_operation": "ComponentScriptExecutor.process"
+                            }
+                        ],
+                        "on_success": [
+                            "config-value-preparation"
+                        ]
+                    },
+                    "config-value-preparation": {
+                        "description": "Prepare configuration for config upload",
+                        "target": "config-value-preparation",
+                        "activities": [
+                            {
+                                "call_operation": "ResourceResolutionComponent.process"
+                            }
+                        ]
+                    }
+                },
+                "inputs": {
+                    "template-prefix": {
+                        "required": true,
+                        "type": "list",
+                        "entry_schema": {
+                            "type": "string"
+                        }
+                    },
+                    "resolution-key": {
+                        "required": false,
+                        "type": "string",
+                        "entry_schema": {
+                            "type": ""
+                        }
+                    },
+                    "resource-assignment-properties": {
+                        "description": "Dynamic PropertyDefinition for workflow(resource-assignment).",
+                        "required": true,
+                        "type": "dt-resource-assignment-properties"
+                    }
+                },
+                "outputs": {
+                    "meshed-template": {
+                        "type": "json",
+                        "value": {
+                            "get_attribute": [
+                                "resource-assignment",
+                                "assignment-params"
+                            ]
+                        }
+                    }
+                }
+            },
+            "config-deploy": {
+                "steps": {
+                    "config-deploy": {
+                        "description": "Config Deploy Workflow",
+                        "target": "config-deploy-process"
+                    }
+                },
+                "inputs": {
+                    "config-deploy-properties": {
+                        "description": "Dynamic PropertyDefinition for workflow(config-deploy).",
+                        "required": true,
+                        "type": "dt-config-deploy-properties"
+                    }
+                },
+                "outputs": {
+                    "dry-run": {
+                        "type": "json",
+                        "value": {
+                            "get_attribute": [
+                                "config-deploy-process",
+                                "assignment-params"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "node_templates": {
+            "resource-assignment": {
+                "type": "component-resource-resolution",
+                "interfaces": {
+                    "ResourceResolutionComponent": {
+                        "operations": {
+                            "process": {
+                                "inputs": {
+                                    "artifact-prefix-names": {
+                                        "get_input": "template-prefix"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "artifacts": {
+                    "helm_base_template-template": {
+                        "type": "artifact-template-velocity",
+                        "file": "Templates/base_template-template.vtl"
+                    },
+                    "helm_base_template-mapping": {
+                        "type": "artifact-mapping-resource",
+                        "file": "Templates/base_template-mapping.json"
+                    },
+                    "helm_vpkg-template": {
+                        "type": "artifact-template-velocity",
+                        "file": "Templates/vpkg-template.vtl"
+                    },
+                    "helm_vpkg-mapping": {
+                        "type": "artifact-mapping-resource",
+                        "file": "Templates/vpkg-mapping.json"
+                    },
+                    "helm_vfw-template": {
+                        "type": "artifact-template-velocity",
+                        "file": "Templates/vfw-template.vtl"
+                    },
+                    "helm_vfw-mapping": {
+                        "type": "artifact-mapping-resource",
+                        "file": "Templates/vfw-mapping.json"
+                    },
+                    "vnf-template": {
+                        "type": "artifact-template-velocity",
+                        "file": "Templates/vnf-template.vtl"
+                    },
+                    "vnf-mapping": {
+                        "type": "artifact-mapping-resource",
+                        "file": "Templates/vnf-mapping.json"
+                    },
+                    "helm_vsn-template": {
+                        "type": "artifact-template-velocity",
+                        "file": "Templates/vsn-template.vtl"
+                    },
+                    "helm_vsn-mapping": {
+                        "type": "artifact-mapping-resource",
+                        "file": "Templates/vsn-mapping.json"
+                    }
+                }
+            },
+            "config-value-preparation": {
+                "type": "component-resource-resolution",
+                "interfaces": {
+                    "ResourceResolutionComponent": {
+                        "operations": {
+                            "process": {
+                                "inputs": {
+                                    "artifact-prefix-names": [
+                                        "config-value"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "artifacts": {
+                    "config-value-mapping": {
+                        "type": "artifact-mapping-resource",
+                        "file": "Templates/config-value-mapping.json"
+                    }
+                }
+            },
+            "k8s-profile-upload": {
+                "type": "component-k8s-profile-upload",
+                "interfaces": {
+                    "K8sProfileUploadComponent": {
+                        "operations": {
+                            "process": {
+                                "inputs": {
+                                    "artifact-prefix-names": {
+                                        "get_input": "template-prefix"
+                                    },
+                                    "resource-assignment-map": {
+                                        "get_attribute": [
+                                            "resource-assignment",
+                                            "assignment-map"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "artifacts": {
+                    "vfw-cnf-cds-base-profile": {
+                        "type": "artifact-k8sprofile-content",
+                        "file": "Templates/k8s-profiles/vfw-cnf-cds-base-profile.tar.gz"
+                    },
+                    "vfw-cnf-cds-vpkg-profile": {
+                        "type": "artifact-k8sprofile-content",
+                        "file": "Templates/k8s-profiles/vfw-cnf-cds-vpkg-profile"
+                    },
+                    "vfw-cnf-cds-vpkg-profile-mapping": {
+                        "type": "artifact-mapping-resource",
+                        "file": "Templates/k8s-profiles/vfw-cnf-cds-vpkg-profile/ssh-service-mapping.json"
+                    }
+                }
+            },
+            "netconf-device" : {
+                "type" : "vnf-netconf-device",
+                "capabilities" : {
+                    "netconf" : {
+                        "properties" : {
+                            "login-key" : "admin",
+                            "login-account" : "admin",
+                            "target-ip-address" : {
+                                "get_attribute" : [ "nf-account-collection", "", "assignment-params", "nf-params" ]
+                            },
+                            "port-number" : 2831,
+                            "connection-time-out" : 5
+                        }
+                    }
+                }
+            },
+            "exemplary-script": {
+                "type": "component-script-executor",
+                "interfaces": {
+                    "ComponentScriptExecutor": {
+                        "operations": {
+                            "process": {
+                                "inputs": {
+                                    "script-type": "kotlin",
+                                    "script-class-reference": "org.onap.ccsdk.cds.blueprintsprocessor.services.execution.scripts.ExampleK8sPluginScript",
+                                    "instance-dependencies" : ["blueprintPropertiesService"],
+                                    "dynamic-properties": "*config-deploy-properties"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "config-deploy-process": {
+                "type": "component-resource-resolution",
+                "interfaces": {
+                    "ResourceResolutionComponent": {
+                        "operations": {
+                            "process": {
+                                "inputs": {
+                                    "artifact-prefix-names": [
+                                        "nf-params"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "artifacts": {
+                    "nf-params-template": {
+                        "type": "artifact-template-velocity",
+                        "file": "Templates/nf-params-template.vtl"
+                    },
+                    "nf-params-mapping": {
+                        "type": "artifact-mapping-resource",
+                        "file": "Templates/nf-params-mapping.json"
+                    }
+                }
+            }
+        }
+    }
+}
