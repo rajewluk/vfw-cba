@@ -45,6 +45,8 @@ open class ExampleK8sPluginScript : AbstractScriptComponentFunction() {
     override suspend fun processNB(executionRequest: ExecutionServiceInput) {
         log.info("EXEC CUSTOM SCRIPT - START")
 
+        val configValueSetup = getDynamicProperties("config-value-setup")
+
         val bluePrintContext = bluePrintRuntimeService.bluePrintContext()
 
         val bluePrintPropertiesService: BlueprintPropertiesService =

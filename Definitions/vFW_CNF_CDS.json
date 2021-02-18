@@ -37,6 +37,14 @@
             "resolution-key": {
                 "get_input": "resolution-key"
             }
+        },
+        "exemplary-script-properties": {
+            "resolution-key": {
+                "get_input": "resolution-key"
+            },
+            "config-value-setup": {
+                "get_attribute": ["config-value-preparation", "", "assignment-map", "config-value","config-value-setup", "helm_vpkg"]
+            }
         }
     },
     "topology_template": {
@@ -49,18 +57,6 @@
                         "activities": [
                             {
                                 "call_operation": "ResourceResolutionComponent.process"
-                            }
-                        ],
-                        "on_success": [
-                            "exemplary-script"
-                        ]
-                    },
-                    "exemplary-script": {
-                        "description": "Exemplary script",
-                        "target": "exemplary-script",
-                        "activities": [
-                            {
-                                "call_operation": "ComponentScriptExecutor.process"
                             }
                         ],
                         "on_success": [
@@ -85,6 +81,18 @@
                         "activities": [
                             {
                                 "call_operation": "ResourceResolutionComponent.process"
+                            }
+                        ],
+                        "on_success": [
+                            "exemplary-script"
+                        ]
+                    },
+                    "exemplary-script": {
+                        "description": "Exemplary script",
+                        "target": "exemplary-script",
+                        "activities": [
+                            {
+                                "call_operation": "ComponentScriptExecutor.process"
                             }
                         ]
                     }
@@ -292,7 +300,7 @@
                                     "script-type": "kotlin",
                                     "script-class-reference": "org.onap.ccsdk.cds.blueprintsprocessor.services.execution.scripts.ExampleK8sPluginScript",
                                     "instance-dependencies" : ["blueprintPropertiesService"],
-                                    "dynamic-properties": "*config-deploy-properties"
+                                    "dynamic-properties": "*exemplary-script-properties"
                                 }
                             }
                         }
