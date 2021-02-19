@@ -72,6 +72,18 @@
                             }
                         ],
                         "on_success": [
+                            "config-template"
+                        ]
+                    },
+                    "config-template": {
+                        "description": "Generate and upload K8s config template",
+                        "target": "k8s-config-template",
+                        "activities": [
+                            {
+                                "call_operation": "K8sConfigTemplateComponent.process"
+                            }
+                        ],
+                        "on_success": [
                             "config-value-preparation"
                         ]
                     },
@@ -271,6 +283,38 @@
                     "vfw-cnf-cds-vpkg-profile-mapping": {
                         "type": "artifact-mapping-resource",
                         "file": "Templates/k8s-profiles/vfw-cnf-cds-vpkg-profile/ssh-service-mapping.json"
+                    }
+                }
+            },
+            "k8s-config-template": {
+                "type": "component-k8s-config-template",
+                "interfaces": {
+                    "K8sConfigTemplateComponent": {
+                        "operations": {
+                            "process": {
+                                "inputs": {
+                                    "artifact-prefix-names": {
+                                        "get_input": "template-prefix"
+                                    },
+                                    "resource-assignment-map": {
+                                        "get_attribute": [
+                                            "resource-assignment",
+                                            "assignment-map"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "artifacts": {
+                    "vfw-cnf-cds-vpkg-profile": {
+                        "type": "artifact-k8sprofile-content",
+                        "file": "Templates/k8s-config/vfw-cnf-cds-vpkg-config"
+                    },
+                    "vfw-cnf-cds-vpkg-profile-mapping": {
+                        "type": "artifact-mapping-resource",
+                        "file": "Templates/k8s-config/vfw-cnf-cds-vpkg-config/ssh-service-mapping.json"
                     }
                 }
             },
